@@ -1,0 +1,39 @@
+# --- Frontend Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1 # Start with 1 replica
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend-app
+        image: frontend-app:1.0 # Your Docker image name and tag
+        ports:
+        - containerPort: 80 # Nginx serves on port 80 inside the container
+        env:
+        - name: REACT_APP_BACKEND_API
+          value: "http://backend-service:5000" # This MUST match your backend Service name and port
+---
+# --- Frontend Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service # This is the service name for frontend
+spec:
+  selector:
+    app: frontend # Selects pods with the label app: frontend
+  ports:
+    - protocol: TCP
+      port: 80 # The port that this Service will expose internally
+      targetPort: 80 # The port on the Pod (Nginx) that the Service will forward to
+  type: NodePort # Exposes the service externally via a node's IP and a static port

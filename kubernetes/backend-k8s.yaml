@@ -1,0 +1,43 @@
+# --- Backend Deployment ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 1 # Start with 1 replica for simplicity
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend-api
+        image: backend-api:1.0 # Your Docker image name and tag
+        ports:
+        - containerPort: 5000
+        env:
+        # We don't need a specific backend URL env here for the backend itself,
+        # but you might add DB connection strings here later.
+        # - name: DB_HOST
+        #   value: "mongodb-service" # This would be the name of your MongoDB Service in K8s
+        # - name: DB_PORT
+        #   value: "27017"
+---
+# --- Backend Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service # This is the DNS name other services (like frontend) will use
+spec:
+  selector:
+    app: backend # Selects pods with the label app: backend
+  ports:
+    - protocol: TCP
+      port: 5000 # The port that this Service will expose
+      targetPort: 5000 # The port on the Pod that the Service will forward to
+  type: ClusterIP # Makes the service only reachable from within the cluster
