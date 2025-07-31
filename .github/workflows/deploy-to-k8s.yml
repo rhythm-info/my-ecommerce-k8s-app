@@ -1,0 +1,50 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_dispatch: # Allows manual trigger from GitHub Actions UI
+  push:
+    branches:
+      - master # or main
+    paths:
+      - 'kubernetes/**' # Trigger if Kubernetes manifests change
+      - 'backend/**' # Trigger if backend image might have updated
+      - 'frontend/**' # Trigger if frontend image might have updated
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- Real-world scenario: Configure Kubectl for your cloud K8s cluster ---
+      # - name: Set up Kubeconfig
+      #   uses: azure/k8s-set-context@v3 # Example for Azure AKS; use similar for GKE/EKS
+      #   with:
+      #     method: 'kubeconfig'
+      #     kubeconfig: ${{ secrets.KUBE_CONFIG }} # You'd store your kubeconfig securely as a secret
+
+      # --- OR: For local testing, you might spin up Minikube/Kind on the runner ---
+      # - name: Start Minikube (for testing deployment in CI)
+      #   uses: medyagh/setup-minikube@master
+      #   with:
+      #     kubernetes-version: 'v1.33.1' # Match your local Minikube version
+
+      - name: Apply Kubernetes Backend Manifests
+        run: |
+          # In a real CI/CD, ensure kubectl context is set correctly
+          # This assumes kubectl is configured to target your desired cluster
+          # For Minikube/Kind on runner, the setup-minikube action would handle context
+          kubectl apply -f kubernetes/backend-k8s.yaml
+
+      - name: Apply Kubernetes Frontend Manifests
+        run: |
+          kubectl apply -f kubernetes/frontend-k8s.yaml
+
+      - name: Verify Deployment (optional, but good practice)
+        run: |
+          kubectl rollout status deployment/backend-deployment
+          kubectl rollout status deployment/frontend-deployment
+          kubectl get pods -l app=backend
+          kubectl get pods -l app=frontend
+          kubectl get services
